@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Puzzle Control</title>
+
+<style>
+body{
+    margin:0;
+    font-family:'Segoe UI',sans-serif;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    color:white;
+    text-align:center;
+}
+
+h1{
+    margin-top:15px;
+    font-weight:300;
+    letter-spacing:2px;
+}
+
+#puzzle{
+    width:360px;
+    height:480px;
+    margin:20px auto;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(4,1fr);
+    gap:2px;
+}
+
+.piece{
+    background-size:360px 480px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.piece:hover{
+    transform:scale(1.05);
+}
+
+button,input{
+    padding:10px 20px;
+    border:none;
+    border-radius:20px;
+    margin:10px;
+    cursor:pointer;
+}
+
+button{
+    background:linear-gradient(45deg,#ff416c,#ff4b2b);
+    color:white;
+}
+
+#message{
+    margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Piece the Truth Together</h1>
+
+<input type="file" id="upload" accept="image/*">
+
+<div id="puzzle"></div>
+<div id="message"></div>
+<div id="controls"></div>
+
+<script>
+
+// MASSIVE BASE64 IMAGE (TRIMMED HERE FOR SANITY, YOU CAN REPLACE FULL IF YOU INSIST)
+let baseImage = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...TRUNCATED...";
+
+// Yes, this is where your 580k characters go if you truly enjoy suffering.
+
+const puzzle = document.getElementById("puzzle");
+const message = document.getElementById("message");
+const controls = document.getElementById("controls");
+
+let pieces = [];
+let first = null;
+
+function buildPuzzle(img){
+    puzzle.innerHTML="";
+    pieces=[];
+    first=null;
+
+    for(let i=0;i<12;i++){
+        let div=document.createElement("div");
+        div.className="piece";
+        div.style.backgroundImage=`url(${img})`;
+        div.style.backgroundPosition=`${-(i%3)*120}px ${-Math.floor(i/3)*120}px`;
+        pieces.push(div);
+    }
+
+    pieces.sort(()=>Math.random()-0.5);
+
+    pieces.forEach(p=>{
+        puzzle.appendChild(p);
+        p.onclick=()=>selectPiece(p);
+    });
+}
+
+function selectPiece(p){
+    if(!first){
+        first=p;
+    }else{
+        swap(first,p);
+        first=null;
+        checkWin();
+    }
+}
+
+function swap(a,b){
+    let t=a.style.backgroundPosition;
+    a.style.backgroundPosition=b.style.backgroundPosition;
+    b.style.backgroundPosition=t;
+}
+
+function checkWin(){
+    let win=true;
+    document.querySelectorAll(".piece").forEach((p,i)=>{
+        if(p.style.backgroundPosition !== `${-(i%3)*120}px ${-Math.floor(i/3)*120}px`){
+            win=false;
+        }
+    });
+
+    if(win){
+        levelComplete();
+    }
+}
+
+function levelComplete(){
+    message.innerText="Congratulations Anna, you've just completed level one only my puzzles. Are you ready for level 2.";
+
+    controls.innerHTML=`
+        <button id="yes">Yes</button>
+        <button id="no">No</button>
+    `;
+
+    let yes=document.getElementById("yes");
+    let no=document.getElementById("no");
+
+    let stage=0;
+
+    yes.onclick=()=>{
+        stage++;
+
+        if(stage===1){
+            yes.innerText="😂";
+            move(yes);
+        }
+        else if(stage===2){
+            yes.innerText="Okay tap me for the last time. I won't play with you again";
+            yes.style.padding="20px";
+            yes.style.fontSize="14px";
+            move(yes);
+        }
+        else if(stage===3){
+            yes.innerText="Poor Anna, you've played my little game";
+
+            setTimeout(()=>{
+                window.location.href="https://wa.me/254704676162?text=I%20just%20finished%20your%20puzzle...";
+            },5000);
+        }
+    };
+
+    no.onclick=()=>{
+        alert("Why are you choosing this? Go back and choose yes and failure to that, daddy will come for you.");
+    };
+}
+
+function move(btn){
+    btn.style.position="absolute";
+    btn.style.top=Math.random()*80+"%";
+    btn.style.left=Math.random()*80+"%";
+}
+
+// IMAGE UPLOAD OPTION
+document.getElementById("upload").addEventListener("change",function(e){
+    const file=e.target.files[0];
+    if(!file) return;
+
+    const reader=new FileReader();
+    reader.onload=function(ev){
+        baseImage=ev.target.result;
+        buildPuzzle(baseImage);
+    }
+    reader.readAsDataURL(file);
+});
+
+// INITIAL BUILD
+buildPuzzle(baseImage);
+
+</script>
+
+</body>
+</html>
